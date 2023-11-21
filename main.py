@@ -52,7 +52,7 @@ def index(request: Request):
 @app.post("/ocr")
 def read_item(body: Drawing):
     if body.image.startswith("data:"):
-        data = body.image.split(",", 1)
+        _, data = body.image.split(",", 1)
 
         response = client.annotate_image(
             {
@@ -64,6 +64,8 @@ def read_item(body: Drawing):
         detected_text = ""
         if len(response.text_annotations) > 0:
             detected_text = response.text_annotations[0].description
+
+        print("Detected text:", detected_text)
 
         return {"words": detected_text}
 
