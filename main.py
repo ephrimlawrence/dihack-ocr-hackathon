@@ -45,16 +45,6 @@ def encode_image(image_path):
     #     return base64.b64encode(image_content)
 
 
-response = client.annotate_image(
-    {
-        "image": {"content": encode_image("test.png")},
-        "features": [{"type_": vision.Feature.Type.TEXT_DETECTION}],
-    }
-)
-# print(response.annotations)
-# print(response)
-print(response.text_annotations)
-
 
 @app.get("/words")
 def get_words():
@@ -72,16 +62,16 @@ def index(request: Request):
 
     # By default OpenCV stores images in BGR format and since pytesseract assumes RGB format,
     # we need to convert from BGR to RGB format/mode:
-    img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
-    contents = pytesseract.image_to_string(img_rgb, config=r"--psm 10")
-    print(contents)
+    # img_rgb = cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB)
+    # contents = pytesseract.image_to_string(img_rgb, config=r"--psm 10")
+    # print(contents)
 
     # OR
     # img_rgb = Image.frombytes("RGB", img_cv.shape[:2], img_cv, "raw", "BGR", 0, 0)
     # print(pytesseract.image_to_string(img_rgb))
 
     return templates.TemplateResponse(
-        "index.html", {"request": request, "id": "4555 55", "para": contents}
+        "index.html", {"request": request, "id": "4555 55", "para": "1234"}
     )
 
 
@@ -110,29 +100,50 @@ def read_item(body: Drawing):
         # # Decode the base64 string to bytes
         # b64_string = body.image
         # b64_string += "=" * ((4 - len(body.image) % 4) % 4) #ugh
-        image_bytes = base64.b64decode(data)
 
-        # # Convert bytes to numpy array
-        image_array = np.frombuffer(image_bytes, dtype=np.uint8)
 
-        # # Decode image array using OpenCV
-        img = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
-        cv2.imwrite("test.png", img)
+        response = client.annotate_image(
+            {
+                "image": {"content": data},
+                "features": [{"type_": vision.Feature.Type.TEXT_DETECTION}],
+            }
+        )
+        # print(response.annotations)
+        # print(response.text_annotations)
+        detected_text = ""
+        if len(response.text_annotations) > 0:
+            detected_text = response.text_annotations[0].description
 
-        # single_img_doc = DocumentFile.from_images("test.png")
-        # result = model(single_img_doc)
-        # print(result)
-        # print("here")
+        # for annotation in response.text_annotations:
+        #     print(annotation.description)
+        #     detected_text += annotation.description + " "
 
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        # print(detected_text, "here")
+
+        # image_bytes = base64.b64decode(data)
+
+        # # # Convert bytes to numpy array
+        # image_array = np.frombuffer(image_bytes, dtype=np.uint8)
+
+        # # # Decode image array using OpenCV
+        # img = cv2.imdecode(image_array, cv2.IMREAD_GRAYSCALE)
+        # cv2.imwrite("test.png", img)
+
+        # # single_img_doc = DocumentFile.from_images("test.png")
+        # # result = model(single_img_doc)
+        # # print(result)
+        # # print("here")
+
+        # img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        # ret, thresh = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         # cv2.imshow('Image', thresh)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        contents = pytesseract.image_to_string(thresh, config=r"--psm 10")
-        print(contents)
+        # contents = pytesseract.image_to_string(thresh, config=r"--psm 10")
+        # print(contents)
+        # contents = "work"
 
-        return {"words": contents}
+        return {"words": detected_text}
 
     # # # Display or save the image as needed
 
