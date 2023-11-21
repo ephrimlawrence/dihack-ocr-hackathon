@@ -8,11 +8,15 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Form
 import numpy as np
-import pytesseract
+
+# import pytesseract
 from pydantic import BaseModel
 from random_word import RandomWords
 from string import ascii_lowercase
 from random import randrange
+from google.cloud import vision
+
+client = vision.ImageAnnotatorClient()
 # from doctr.io import DocumentFile
 # from doctr.models import ocr_predictor
 
@@ -30,6 +34,26 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+
+def encode_image(image_path):
+    _, buffer = cv2.imencode(".png", cv2.imread(image_path))
+    img_base64 = base64.b64encode(buffer).decode()
+    return img_base64
+    # with open(image_path, "rb") as f:
+    #     image_content = f.read()
+    #     return base64.b64encode(image_content)
+
+
+response = client.annotate_image(
+    {
+        "image": {"content": encode_image("test.png")},
+        "features": [{"type_": vision.Feature.Type.TEXT_DETECTION}],
+    }
+)
+# print(response.annotations)
+# print(response)
+print(response.text_annotations)
 
 
 @app.get("/words")
