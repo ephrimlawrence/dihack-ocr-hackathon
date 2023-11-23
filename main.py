@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Form
+from fastapi.middleware.cors import CORSMiddleware
 import numpy as np
 
 # import pytesseract
@@ -29,6 +30,22 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
+
+origins = [
+    "http://localhost:5173",
+    "http://localhost:4173",
+    "https://sbcimpact.amplio.org",
+    "https://sbcimpact.amplio.org/",
+    "https://*.amplio.org",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/words")
