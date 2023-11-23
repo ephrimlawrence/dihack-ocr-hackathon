@@ -15,6 +15,9 @@ from random_word import RandomWords
 from string import ascii_lowercase
 from random import randrange
 from google.cloud import vision
+from openai import OpenAI
+import os
+
 
 client = vision.ImageAnnotatorClient()
 
@@ -90,11 +93,22 @@ def read_item(body: Drawing):
 
 @app.post("/audio")
 async def decode_audio(file: Annotated[bytes, File()]):
+    client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+
+
     # Save file to "test.ogg"
-    dest = ""
     # file_object = await file()
     with open(f'test.ogg', 'wb') as fh:
         fh.write(file)
+
+    audio_file = open("test.ogg", "rb")
+    transcript = client.audio.transcriptions.create(
+        model="whisper-1", file=audio_file, response_format="text"
+    )
+    print(transcript)
+
     # await file.close()
     # print(file.decode())
+
     return {"file_size": len(file)}
