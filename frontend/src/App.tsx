@@ -25,6 +25,10 @@ function App() {
   const stage = useRef<UStage>(null);
   const mediaRecorder = useRef<MediaRecorder | null>(null)
   const audioChunks = useRef<Blob[]>([])
+  const voices = useRef<SpeechSynthesisVoice[] | null>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string>("");
+
+  // const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   const getWords = async () => {
     await fetch(`${API_URL}/words`, {
@@ -190,9 +194,55 @@ function App() {
       body: fd
     }).then(response => response.json())
   }
+
+  const textToSpeach = async () => {
+    const synth = window.speechSynthesis;
+
+    const utterThis = new SpeechSynthesisUtterance("Derry Emmanuel is a boy ");
+    const selectedOption = selectedVoice
+    for (const voice of (voices.current || [])) {
+      if (voice.name === selectedOption) {
+        utterThis.voice = voice;
+      }
+    }
+    utterThis.pitch = 1;
+    utterThis.rate = 1;
+    synth.speak(utterThis);
+  }
+
+  const populateVoiceList = () => {
+    voices.current = window.speechSynthesis.getVoices();
+    console.log(voices.current);
+    const list = [];
+
+    for (const voice of voices.current) {
+      const option = document.createElement("option");
+      option.textContent = `${voice.name} (${voice.lang})`;
+      option.value = voice.name;
+
+      if (voice.default) {
+        option.textContent += " — DEFAULT";
+      }
+
+      list.push(option);
+    }
+
+    return list
+  }
+
   return (
     <div className="App">
       <div className="">
+
+        <button onClick={textToSpeach}>Text to Speech</button>
+
+        <select id="voice-select" onChange={(e) => {
+          setSelectedVoice(e.target.value);
+        }}>
+          {populateVoiceList().map((option, i) => {
+            return (<option value={option.value} key={i}>{option.textContent}</option>)
+          })}
+        </select>
 
         <button onClick={stopRecorder}>Stop Recorder </button>
         <div className="card card-body mt-2 mx-2">
