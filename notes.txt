@@ -1,0 +1,4 @@
+give user promt to write the words together(or make it possible for the user to type under the correspondin letter in your code)
+make the eraser tool flexible(thus, make it possible for the user to enlarge the eraser tool)
+show the pencil tool if possible
+add "wrong, try again" to the wrong animations
