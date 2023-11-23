@@ -1,7 +1,7 @@
 import base64
 from typing import Union, Annotated
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, File, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -53,8 +53,8 @@ def get_words():
     # return {"words": ascii_lowercase[randrange(len(ascii_lowercase))]}
 
     word = r.get_random_word()
-    if len(word) > 3:
-        word = word[:3]
+    # if len(word) > 3:
+    #     word = word[:3]
 
     return {"words": word}
 
@@ -87,3 +87,14 @@ def read_item(body: Drawing):
         return {"words": detected_text}
 
     return {"words": body.words}
+
+@app.post("/audio")
+async def decode_audio(file: Annotated[bytes, File()]):
+    # Save file to "test.ogg"
+    dest = ""
+    # file_object = await file()
+    with open(f'test.ogg', 'wb') as fh:
+        fh.write(file)
+    # await file.close()
+    # print(file.decode())
+    return {"file_size": len(file)}

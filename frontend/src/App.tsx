@@ -5,21 +5,26 @@ import Konva from "konva";
 import { confetti } from "tsparticles-confetti";
 // const jsConfetti = new JSConfetti()
 import { Stage, Layer, Line, Text } from 'react-konva';
-import { Stage as UStage} from "konva/lib/Stage";
+import { Stage as UStage } from "konva/lib/Stage";
+import { Block } from "typescript";
 
 const API_URL = "http://localhost:8000"
 
 function App() {
-  const [liked, setLiked] = useState(false);
+  const [mode, setMode] = useState<"write" | "speak">("write");
   const [isStageReady, setIsStageReady] = useState(false);
   // const [stage, setStage] = useState<any>();
   const [ocrOutput, setOcrOutput] = useState("");
   const [words, setWords] = useState([]);
+  // const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder>();
+  // const [audioChunks, setAudioChunks] = useState<Blob[]>([])
 
   const [tool, setTool] = useState('pen');
   const [lines, setLines] = useState<{ tool: string, points: number[] }[]>([]);
   const isDrawing = useRef(false);
   const stage = useRef<UStage>(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null)
+  const audioChunks = useRef<Blob[]>([])
 
   const getWords = async () => {
     await fetch(`${API_URL}/words`, {
@@ -133,10 +138,63 @@ function App() {
     return Math.floor(12 / words.length);
   };
 
+  const modeChanged = (value: any) => {
+    if (value == "write") return;
+
+    setMode(value)
+    // let audioChunks: any[] = [];
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(async (stream) => {
+        mediaRecorder.current = new MediaRecorder(stream);
+
+        // const audioRecorder = new MediaRecorder(stream);
+        mediaRecorder.current.ondataavailable = (e) => {
+          //   audioChunks.push(e.data);
+          // };
+
+          console.log('here available');
+          audioChunks.current?.push(e.data);
+          console.log(audioChunks.current)
+        }
+
+        mediaRecorder.current.start(1000);
+
+
+        // const audioUrl = URL.createObjectURL(blobObj);
+        // console.log(audioUrl)
+        // const audio = new Audio(audioUrl);
+        // audio.play();
+      })
+  }
+
+  const stopRecorder = async () => {
+
+    // await setTimeout(() => 2000 * 15)
+    mediaRecorder.current!.stop();
+
+    console.log(audioChunks)
+    const blobObj = new Blob(audioChunks.current, { type: "audio/ogg; codecs=opus" });
+
+    var reader = new FileReader();
+    var fd = new FormData();
+    var mp3Name = encodeURIComponent('audio_recording_' + new Date().getTime() + '.mp3');
+    console.log("mp3name = " + mp3Name);
+    fd.append('fname', mp3Name);
+    fd.append('file', blobObj);
+    await fetch(`${API_URL}/audio`, {
+      method: 'POST',
+      headers: {
+        // 'Content-Type': 'application/json
+      },
+      body: fd
+    }).then(response => response.json())
+  }
   return (
     <div className="App">
       <div className="">
 
+        <button onClick={stopRecorder}>Stop Recorder </button>
         <div className="card card-body mt-2 mx-2">
 
           <div className="row" id="alphabets-row">
@@ -158,6 +216,11 @@ function App() {
               <select id="tool" className="select">
                 <option value="brush">Brush</option>
                 <option value="eraser">Eraser</option>
+              </select>
+
+              <select className="select" onChange={(e) => modeChanged(e.target.value as any)}>
+                <option value="write">Write</option>
+                <option value="speak">Speak</option>
               </select>
 
               {/* <div id="konva-container" className="my-2"></div> */}
