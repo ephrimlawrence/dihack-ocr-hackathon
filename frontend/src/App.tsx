@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import logo from "./logo.svg";
 import "./App.css";
 import Konva from "konva";
-import { Stage } from "konva/lib/Stage";
 import { confetti } from "tsparticles-confetti";
 // const jsConfetti = new JSConfetti()
+import { Stage, Layer, Line, Text } from 'react-konva';
+import { Stage as UStage} from "konva/lib/Stage";
 
 const API_URL = "http://localhost:8000"
 
 function App() {
   const [liked, setLiked] = useState(false);
   const [isStageReady, setIsStageReady] = useState(false);
-  const [stage, setStage] = useState<Stage>();
+  // const [stage, setStage] = useState<any>();
   const [ocrOutput, setOcrOutput] = useState("");
   const [words, setWords] = useState([]);
+
+  const [tool, setTool] = useState('pen');
+  const [lines, setLines] = useState<{ tool: string, points: number[] }[]>([]);
+  const isDrawing = useRef(false);
+  const stage = useRef<UStage>(null);
 
   const getWords = async () => {
     await fetch(`${API_URL}/words`, {
@@ -30,6 +36,34 @@ function App() {
       .catch((error) => console.error("Error:", error));
   };
 
+
+  const handleMouseDown = (e: any) => {
+    isDrawing.current = true;
+    const pos = e.target.getStage().getPointerPosition();
+    setLines([...lines, { tool, points: [pos.x, pos.y] }]);
+  };
+
+  const handleMouseMove = (e: { target: { getStage: () => any; }; }) => {
+    // no drawing - skipping
+    if (!isDrawing.current) {
+      return;
+    }
+    const stage = e.target.getStage();
+    const point = stage.getPointerPosition();
+    let lastLine = lines[lines.length - 1];
+    // add point
+    lastLine.points = lastLine.points.concat([point.x, point.y]);
+
+    // replace last
+    lines.splice(lines.length - 1, 1, lastLine);
+    setLines(lines.concat());
+  };
+
+  const handleMouseUp = () => {
+    isDrawing.current = false;
+  };
+
+
   useEffect(() => {
     // Fetch words from server
     getWords();
@@ -38,61 +72,61 @@ function App() {
     var height = 400;
 
     // first we need Konva core things: stage and layer
-    var stage = new Konva.Stage({
-      container: "konva-container",
-      width: width,
-      height: height,
-    });
+    // var stage = new Konva.Stage({
+    //   container: "konva-container",
+    //   width: width,
+    //   height: height,
+    // });
 
-    var layer = new Konva.Layer();
-    stage.add(layer);
+    // var layer = new Konva.Layer();
+    // stage.add(layer);
 
-    var isPaint = false;
-    var mode = "brush";
-    var lastLine: any = null;
+    // var isPaint = false;
+    // var mode = "brush";
+    // var lastLine: any = null;
 
-    stage.on("mousedown touchstart", function (e) {
-      isPaint = true;
-      const pos = stage.getPointerPosition()!;
-      lastLine = new Konva.Line({
-        stroke: "#df4b26",
-        strokeWidth: 5,
-        globalCompositeOperation:
-          mode === "brush" ? "source-over" : "destination-out",
-        // round cap for smoother lines
-        lineCap: "round",
-        lineJoin: "round",
-        // add point twice, so we have some drawings even on a simple click
-        points: [pos.x, pos.y, pos.x, pos.y],
-      });
-      layer.add(lastLine);
-    });
+    // stage.on("mousedown touchstart", function (e) {
+    //   isPaint = true;
+    //   const pos = stage.getPointerPosition()!;
+    //   lastLine = new Konva.Line({
+    //     stroke: "#df4b26",
+    //     strokeWidth: 1,
+    //     globalCompositeOperation:
+    //       mode === "brush" ? "source-over" : "destination-out",
+    //     // round cap for smoother lines
+    //     lineCap: "round",
+    //     lineJoin: "round",
+    //     // add point twice, so we have some drawings even on a simple click
+    //     points: [pos.x, pos.y, pos.x, pos.y],
+    //   });
+    //   layer.add(lastLine);
+    // });
 
-    stage.on("mouseup touchend", function () {
-      isPaint = false;
-    });
+    // stage.on("mouseup touchend", function () {
+    //   isPaint = false;
+    // });
 
-    // and core function - drawing
-    stage.on("mousemove touchmove", function (e) {
-      if (!isPaint) {
-        return;
-      }
+    // // and core function - drawing
+    // stage.on("mousemove touchmove", function (e) {
+    //   if (!isPaint) {
+    //     return;
+    //   }
 
-      // prevent scrolling on touch devices
-      e.evt.preventDefault();
+    //   // prevent scrolling on touch devices
+    //   e.evt.preventDefault();
 
-      const pos = stage.getPointerPosition()!;
-      var newPoints = lastLine.points().concat([pos.x, pos.y]);
-      lastLine.points(newPoints);
-    });
+    //   const pos = stage.getPointerPosition()!;
+    //   var newPoints = lastLine.points().concat([pos.x, pos.y]);
+    //   lastLine.points(newPoints);
+    // });
 
-    const select = document.getElementById("tool")!;
-    select.addEventListener("change", function () {
-      mode = (select as any).value;
-    });
+    // const select = document.getElementById("tool")!;
+    // select.addEventListener("change", function () {
+    //   mode = (select as any).value;
+    // });
 
-    setIsStageReady(true);
-    setStage(stage);
+    // setIsStageReady(true);
+    // setStage(stage);
   }, []);
 
   const colsCount = () => {
@@ -126,9 +160,36 @@ function App() {
                 <option value="eraser">Eraser</option>
               </select>
 
-              <div id="konva-container" className="my-2"></div>
+              {/* <div id="konva-container" className="my-2"></div> */}
 
               {/* {this.canvas()} */}
+
+              <Stage
+                ref={stage}
+                width={window.innerWidth}
+                height={window.innerHeight}
+                onMouseDown={handleMouseDown}
+                onMousemove={handleMouseMove}
+                onMouseup={handleMouseUp}
+              >
+                <Layer>
+                  {/* <Text text="Just start drawing" x={5} y={30} /> */}
+                  {lines.map((line, i) => (
+                    <Line
+                      key={i}
+                      points={line.points}
+                      stroke="#df4b26"
+                      strokeWidth={5}
+                      tension={0.5}
+                      lineCap="round"
+                      lineJoin="round"
+                      globalCompositeOperation={
+                        line.tool === 'eraser' ? 'destination-out' : 'source-over'
+                      }
+                    />
+                  ))}
+                </Layer>
+              </Stage>
             </div>
           </div>
         </div>
@@ -137,7 +198,7 @@ function App() {
           <div className="col-md-12 text-center justify-content-center mb-3">
             <button className="btn btn-primary btn-lg" onClick={async () => {
               // Convert stage to image
-              var dataURL = stage?.toDataURL();
+              var dataURL = stage?.current?.toDataURL();
 
               // Send the image to the server
               await fetch(`${API_URL}/ocr`, {
