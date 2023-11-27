@@ -238,6 +238,7 @@ function App() {
 
         <button onClick={textToSpeach}>Text to Speech</button>
 
+        {/* TODO: can remove dropdown */}
         <select id="voice-select" onChange={(e) => {
           setSelectedVoice(e.target.value);
         }}>

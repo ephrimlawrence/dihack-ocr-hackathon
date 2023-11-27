@@ -17,6 +17,7 @@ import os
 
 client = vision.ImageAnnotatorClient()
 
+# TODO: If possible, use openai to get easy to get 100 easy random words on app start
 r = RandomWords()
 
 
@@ -87,11 +88,10 @@ def read_item(body: Drawing):
 
     return {"words": body.words}
 
+
 @app.post("/audio")
 async def decode_audio(file: Annotated[bytes, File()]):
     client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-
-
 
     # Save file to "test.ogg"
     # file_object = await file()
