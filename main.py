@@ -1,8 +1,6 @@
-import base64
 from typing import Union, Annotated
 
 from fastapi import FastAPI, File, Request
-from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi import FastAPI, Form
@@ -12,8 +10,6 @@ import numpy as np
 # import pytesseract
 from pydantic import BaseModel
 from random_word import RandomWords
-from string import ascii_lowercase
-from random import randrange
 from google.cloud import vision
 from openai import OpenAI
 import os
@@ -108,6 +104,7 @@ async def decode_audio(file: Annotated[bytes, File()]):
     )
     print(transcript)
 
+    # TODO: compare transcript to text
     # await file.close()
     # print(file.decode())
 

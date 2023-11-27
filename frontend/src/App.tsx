@@ -198,16 +198,18 @@ function App() {
   const textToSpeach = async () => {
     const synth = window.speechSynthesis;
 
-    const utterThis = new SpeechSynthesisUtterance("Derry Emmanuel is a boy ");
+    const utterThis = new SpeechSynthesisUtterance('Pronounce the word "Derry Emmanuel"');
     const selectedOption = selectedVoice
     for (const voice of (voices.current || [])) {
-      if (voice.name === selectedOption) {
+      if (voice.lang === "en-US") {
         utterThis.voice = voice;
       }
     }
     utterThis.pitch = 1;
     utterThis.rate = 1;
     synth.speak(utterThis);
+
+    // TODO: start recording
   }
 
   const populateVoiceList = () => {
